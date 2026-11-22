@@ -52,14 +52,30 @@ def calculate_damage(your_type, opponent_type, attack, defense):
     for x in Super_efective:
         if (your_type, opponent_type) == x:
             effectiveness = 2
-            
-    for x in Neutral:
-        if (your_type, opponent_type) == x:
-            effectiveness = 1
-            
-    for x in Not_effective:
-        if (your_type, opponent_type) == x:
-            effectiveness = 0.5
+        else:
+            for x in Neutral:
+                if (your_type, opponent_type) == x:
+                    effectiveness = 1
+                else:
+                    for x in Not_effective:
+                        if (your_type, opponent_type) == x:
+                            effectiveness = 0.5
     
     damage = 50 * (attack / defense) * effectiveness
     return damage
+
+    # OR
+    def calculate_damage(your_type, opponent_type, attack, defense):
+        super_effective = {('fire', 'grass'), ('water', 'fire'), ('grass', 'water'), ('electric', 'water')}
+        not_effective = {('grass', 'fire'), ('fire', 'water'), ('water', 'grass'), ('water', 'electric')}
+        
+        matchup = (your_type, opponent_type)
+        
+        if matchup in super_effective:
+            effectiveness = 2
+        elif your_type == opponent_type or matchup in not_effective:
+            effectiveness = 0.5
+        else:
+            effectiveness = 1
+            
+        return 50 * (attack / defense) * effectiveness

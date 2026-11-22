@@ -77,16 +77,25 @@ FROM students s
   GROUP BY c.student_id, s.name
   ORDER by c.student_id DESC;
 
-  -- OR best practice solution
-
-select s.id as student_id, s.name,
-  format('Michaelmas (%s), Lent (%s), Summer (%s)', round(avg(c1.score), 2), round(avg(c2.score), 2), round(avg(c3.score), 2)) as trimesters_avg_scores,
-  avg(c1.score) < avg(c2.score) and avg(c2.score) < avg(c3.score) as consistent_improvement
-from students s
-join courses c1 on c1.student_id = s.id and c1.course_date between '2022-10-01' and '2022-12-31'
-join courses c2 on c2.student_id = s.id and c2.course_date between '2023-01-01' and '2023-03-31'
-join courses c3 on c3.student_id = s.id and c3.course_date between '2023-04-01' and '2023-06-30'
-group by s.id
-order by 1 desc
 
   -- OR solution with WINDOW FUNCTION
+WITH trimester_averages AS (
+    SELECT 
+        s.id AS student_id,
+        s.name,
+        ROUND(AVG(c.score) FILTER (WHERE c.course_date BETWEEN '2022-10-01' AND '2022-12-31')::numeric, 2) AS m_avg,
+        ROUND(AVG(c.score) FILTER (WHERE c.course_date BETWEEN '2023-01-01' AND '2023-03-31')::numeric, 2) AS l_avg,
+        ROUND(AVG(c.score) FILTER (WHERE c.course_date BETWEEN '2023-04-01' AND '2023-06-30')::numeric, 2) AS s_avg
+    FROM students s
+    JOIN courses c ON c.student_id = s.id
+    WHERE c.course_date BETWEEN '2022-10-01' AND '2023-06-30'
+    GROUP BY s.id, s.name
+)
+SELECT 
+    student_id,
+    name,
+    FORMAT('Michaelmas (%s), Lent (%s), Summer (%s)', m_avg, l_avg, s_avg) AS trimesters_avg_scores,
+    (m_avg < l_avg AND l_avg < s_avg) AS consistent_improvement
+FROM trimester_averages
+ORDER BY student_id DESC;
+
